@@ -5,7 +5,7 @@ CREATE TYPE "order_status" AS ENUM (
 );
 
 CREATE TABLE "users" (
-  "id" integer UNIQUE PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "email" varchar,
   "password_hash" varchar,
   "created_at" timestamp,
@@ -13,7 +13,7 @@ CREATE TABLE "users" (
 );
 
 CREATE TABLE "products" (
-  "id" integer UNIQUE PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "name" varchar,
   "price" integer,
   "stock_quantity" integer,
@@ -22,7 +22,7 @@ CREATE TABLE "products" (
 );
 
 CREATE TABLE "orders" (
-  "id" integer UNIQUE PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "user_id" integer NOT NULL,
   "status" order_status NOT NULL DEFAULT 'pending',
   "total_price" integer,
@@ -33,7 +33,7 @@ CREATE TABLE "orders" (
 );
 
 CREATE TABLE "order_items" (
-  "id" integer UNIQUE PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "order_id" integer NOT NULL,
   "product_id" integer NOT NULL,
   "product_quantity" integer,
