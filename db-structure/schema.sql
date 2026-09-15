@@ -6,19 +6,19 @@ CREATE TYPE "order_status" AS ENUM (
 
 CREATE TABLE "users" (
   "id" SERIAL PRIMARY KEY,
-  "email" varchar,
-  "password_hash" varchar,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "email" varchar UNIQUE NOT NULL,
+  "password_hash" varchar NOT NULL,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "products" (
   "id" SERIAL PRIMARY KEY,
   "name" varchar,
   "price" integer,
-  "stock_quantity" integer,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "stock_quantity" integer NOT NULL CHECK (stock_quantity >= 0),
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "orders" (
@@ -27,9 +27,8 @@ CREATE TABLE "orders" (
   "status" order_status NOT NULL DEFAULT 'pending',
   "total_price" integer,
   "idempotency_key" varchar UNIQUE NOT NULL,
-  "stock_quantity" integer,
-  "created_at" timestamp,
-  "updated_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "order_items" (
