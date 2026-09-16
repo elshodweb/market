@@ -1,3 +1,4 @@
+```SQL
 Table users {
   id integer [unique, primary key]
   email varchar
@@ -46,3 +47,4 @@ Ref: users.id <? orders.user_id
 Ref: orders.id <? order_items.order_id
 
 Ref: products.id <? order_items.product_id
+```

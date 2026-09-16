@@ -1,98 +1,79 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Task: Concurrent Order & Inventory Reservation Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[Task Doc link](https://gist.github.com/Dostonlv/553bed161e42a6bcff6bf202d293f372)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+A mini marketplace backend built with NestJS.
 
-## Description
+## Tech Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- NestJS, Node.js, TypeScript
+- PostgreSQL
+- Redis
+- JWT, Passport JWT, Bcrypt
+- Docker and Docker Compose
+- Swagger
 
-## Project setup
+## Project Architecture
 
-```bash
-$ npm install
-```
+Layers:
 
-## Compile and run the project
+1. **Controller**
+2. **Service**
+3. **Repository**
 
-```bash
-# development
-$ npm run start
+## Main Features and Technical Decisions
 
-# watch mode
-$ npm run start:dev
+### 1. Safe Stock Reservation
 
-# production mode
-$ npm run start:prod
-```
+**Problem:** Many users can buy the same product at the same time. If we have only 10 products but 50 users try to buy them, the system may sell more than 10 without protection.
 
-## Run tests
+**Solution:**
 
-```bash
-# unit tests
-$ npm run test
+- Use `TRANSACTION`
+- Lock the product with `SELECT ... FOR UPDATE`.
+- Use `CHECK (stock_quantity >= 0)` so stock cannot become negative.
 
-# e2e tests
-$ npm run test:e2e
+### 2. Idempotency Key
 
-# test coverage
-$ npm run test:cov
-```
+**Problem:** A user may click the order button several times.
 
-## Deployment
+**Solution:**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Every `POST /orders` request has an `Idempotency-Key`.
+- Use Redis and `Idempotency-Key` to prevent this
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 3. Product Caching
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+1. First, check Redis.
+2. If the product is in Redis, return it.
+3. If it is not in Redis, get it from PostgreSQL.
+4. When a product changes, remove its old data from Redis
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Automatic Order Cancellation
 
-## Resources
+We use `@nestjs/schedule` to run a job every minute.
 
-Check out a few resources that may come in handy when working with NestJS:
+1. Finds `pending` orders older than 15 minutes
+2. Changes their status to `cancelled`
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Order Statuses
 
-## Support
+| Status      | Meaning             |
+| ----------- | ------------------- |
+| `pending`   | waiting for payment |
+| `confirmed` | confirmed           |
+| `cancelled` | cancelled           |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Database Schema
 
-## Stay in touch
+[Schema link](./db-structure/db-structure.md)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+![Schema](./db-structure/db-structure.png)
 
-## License
+- A user can have many orders.
+- An order can have many order items.
+- Each order item refers to one product and stores its quantity and unit price.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---
+
+The `./test.js` file is used to test `Safe Stock Reservation`
