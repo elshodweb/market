@@ -29,10 +29,11 @@ export class OrdersRepository {
     return result.rows[0] || null;
   }
 
-  async findByIdWithItems(orderId: number) {
-    const orderQuery = `SELECT * FROM orders WHERE id = $1;`;
+  async findByIdWithItems(orderId: number, userId: number) {
+    const orderQuery = `SELECT * FROM orders WHERE id = $1 AND user_id = $2;`;
     const orderResult = await this.pool.query<OrderEntity>(orderQuery, [
       orderId,
+      userId,
     ]);
     const order = orderResult.rows[0];
     if (!order) return null;
@@ -136,14 +137,17 @@ export class OrdersRepository {
     }
   }
 
-  async cancelOrderAndRestoreStock(orderId: number): Promise<OrderEntity> {
+  async cancelOrderAndRestoreStock(
+    orderId: number,
+    userId?: number,
+  ): Promise<OrderEntity> {
     const client: PoolClient = await this.pool.connect();
     try {
       await client.query('BEGIN');
 
       const orderResult = await client.query<OrderEntity>(
-        `SELECT * FROM orders WHERE id = $1 FOR UPDATE;`,
-        [orderId],
+        `SELECT * FROM orders WHERE id = $1 FOR UPDATE ${userId ?? 'AND user_id = $2'};`,
+        [orderId, userId],
       );
       const order = orderResult.rows[0];
       if (!order) {

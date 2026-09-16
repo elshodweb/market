@@ -71,8 +71,9 @@ export class OrdersController {
   })
   @ApiResponse({ status: 200, description: 'Order details' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  async findById(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.findById(id);
+  async findById(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const userId = req.user.id;
+    return this.ordersService.findById(id, userId);
   }
 
   @Post(':id/cancel')
@@ -80,7 +81,8 @@ export class OrdersController {
   @ApiResponse({ status: 200, description: 'Order cancelled' })
   @ApiResponse({ status: 400, description: 'Order cannot be cancelled' })
   @ApiResponse({ status: 404, description: 'Order not found' })
-  async cancelOrder(@Param('id', ParseIntPipe) id: number) {
-    return this.ordersService.cancelOrder(id);
+  async cancelOrder(@Req() req: any, @Param('id', ParseIntPipe) id: number) {
+    const userId = req.user.id;
+    return this.ordersService.cancelOrder(id, userId);
   }
 }

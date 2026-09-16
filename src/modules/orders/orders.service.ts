@@ -61,17 +61,20 @@ export class OrdersService {
     }
   }
 
-  async findById(orderId: number) {
-    const order = await this.ordersRepository.findByIdWithItems(orderId);
+  async findById(orderId: number, userId: number) {
+    const order = await this.ordersRepository.findByIdWithItems(
+      orderId,
+      userId,
+    );
     if (!order) {
       throw new NotFoundException(`Order not found`);
     }
     return order;
   }
 
-  async cancelOrder(orderId: number) {
+  async cancelOrder(orderId: number, userId?: number) {
     const cancelledOrder =
-      await this.ordersRepository.cancelOrderAndRestoreStock(orderId);
+      await this.ordersRepository.cancelOrderAndRestoreStock(orderId, userId);
 
     const pageKeys = await this.redis.keys('products:page:*');
     if (pageKeys.length > 0) {
@@ -89,7 +92,7 @@ export class OrdersService {
       page,
       limit,
     );
-    
+
     return {
       data: items,
       meta: {
