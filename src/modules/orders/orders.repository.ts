@@ -230,4 +230,16 @@ export class OrdersRepository {
       total: parseInt(countResult.rows[0].count, 10),
     };
   }
+
+  async findExpiredPendingOrders(): Promise<number[]> {
+    const query = `
+      SELECT id 
+      FROM orders 
+      WHERE status = 'pending' 
+        AND created_at < NOW() - INTERVAL '15 minutes'
+      FOR UPDATE SKIP LOCKED;
+    `;
+    const result = await this.pool.query<{ id: number }>(query);
+    return result.rows.map((row) => row.id);
+  }
 }

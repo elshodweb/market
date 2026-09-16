@@ -68,4 +68,5 @@ export class ProductsRepository {
       total: parseInt(countResult.rows[0].count, 10),
     };
   }
+
 }
